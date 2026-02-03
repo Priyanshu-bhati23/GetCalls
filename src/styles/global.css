@@ -1,0 +1,193 @@
+/* ════════════════════════════════════════════════════
+   GLOBAL — reset · variables · typography · utilities
+   ════════════════════════════════════════════════════ */
+
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&display=swap');
+
+*, *::before, *::after {
+  margin: 0; padding: 0; box-sizing: border-box;
+}
+
+:root {
+  --bg:            #08080a;
+  --bg-elevated:   rgba(16, 16, 22, 0.78);
+  --accent:        #00e5ff;
+  --accent-glow:   rgba(0, 229, 255, 0.38);
+  --accent2:       #ff6b35;
+  --accent3:       #b8ff00;
+  --accent3-glow:  rgba(184, 255, 0, 0.3);
+  --text:          #eeeef2;
+  --text-dim:      #6a6a7c;
+  --text-mid:      #9e9eae;
+  --border:        rgba(255,255,255,0.07);
+  --border-hover:  rgba(255,255,255,0.18);
+  --radius:        18px;
+  --radius-sm:     12px;
+  --radius-pill:   50px;
+}
+
+html { scroll-behavior: smooth; font-size: 16px; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+
+/* ── Grain overlay (full-page noise texture) ── */
+body::after {
+  content: '';
+  position: fixed; inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0.6;
+}
+
+/* ── Ambient orbs ── */
+.orb {
+  position: fixed; border-radius: 50%;
+  filter: blur(140px);
+  pointer-events: none; z-index: 0;
+}
+.orb-1 { width:540px; height:540px; background:var(--accent);  top:-200px; left:-200px; opacity:.28; }
+.orb-2 { width:440px; height:440px; background:var(--accent2); bottom:2%; right:-160px; opacity:.18; }
+.orb-3 { width:380px; height:380px; background:var(--accent3); top:52%; left:22%; opacity:.08; }
+
+/* ── Section shell ── */
+.section {
+  position: relative; z-index: 1;
+  padding: 110px 24px;
+  min-height: 100vh;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+}
+
+/* ── Label ── */
+.label {
+  display: inline-block;
+  font-size: 0.68rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 2.8px;
+  color: var(--accent); margin-bottom: 16px;
+}
+
+/* ── Section heading ── */
+.section-h2 {
+  font-family: 'Syne', sans-serif;
+  font-size: clamp(2rem, 5.8vw, 3.6rem);
+  font-weight: 800; line-height: 1.06;
+  letter-spacing: -2.5px; color: #fff;
+  text-align: center; max-width: 700px;
+}
+.section-h2 .dim       { color: var(--text-dim); }
+.section-h2 .hi-cyan   { color: var(--accent); }
+.section-h2 .hi-lime   { color: var(--accent3); }
+.section-h2 .hi-white  { color: #fff; }
+
+.section-sub {
+  color: var(--text-dim); max-width: 530px;
+  text-align: center; margin-top: 18px;
+  font-size: 1rem; line-height: 1.74;
+}
+
+/* ── Glass card ── */
+.glass {
+  background: var(--bg-elevated);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+/* ── Buttons ── */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  gap: 6px; font-family: 'DM Sans', sans-serif;
+  font-weight: 600; border: none; cursor: pointer;
+  text-decoration: none;
+  border-radius: var(--radius-pill);
+  transition: transform .22s cubic-bezier(.22,1,.36,1),
+              box-shadow .22s, background .22s;
+  user-select: none;
+}
+.btn:active { transform: scale(0.95) !important; }
+
+.btn-cyan {
+  background: var(--accent); color: #0a0a0a;
+  padding: 15px 34px; font-size: .93rem;
+}
+.btn-cyan:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 36px var(--accent-glow);
+}
+.btn-cyan-lg { padding: 19px 44px; font-size: 1.05rem; }
+
+.btn-ghost {
+  background: transparent; color: #fff;
+  border: 1px solid var(--border);
+  padding: 15px 30px; font-size: .93rem;
+}
+.btn-ghost:hover { border-color: var(--border-hover); background: rgba(255,255,255,.05); }
+
+/* ── Form ── */
+.form-group { margin-bottom: 16px; }
+.form-group label {
+  display: block; font-size: .74rem; font-weight: 600;
+  color: var(--text-mid); margin-bottom: 6px;
+  text-transform: uppercase; letter-spacing: .9px;
+}
+.form-group input,
+.form-group select,
+.form-group textarea {
+  width: 100%; background: rgba(255,255,255,.04);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 12px 15px; color: #fff;
+  font-family: 'DM Sans', sans-serif; font-size: .9rem;
+  outline: none; transition: border-color .25s, box-shadow .25s;
+  -webkit-appearance: none; appearance: none;
+}
+.form-group input::placeholder,
+.form-group textarea::placeholder { color: var(--text-dim); }
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  border-color: rgba(0,229,255,.4);
+  box-shadow: 0 0 0 3px rgba(0,229,255,.12);
+}
+.form-group input.err, .form-group select.err, .form-group textarea.err {
+  border-color: rgba(255,80,80,.5);
+  box-shadow: 0 0 0 3px rgba(255,80,80,.12);
+}
+.form-group .err-msg {
+  color: #ff6b6b; font-size: .72rem;
+  margin-top: 4px; min-height: 16px;
+}
+.form-group select {
+  color: var(--text-mid);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%237a7a8a' fill='none' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 14px center;
+  padding-right: 36px;
+}
+.form-group select option { background: #1a1a22; color: #fff; }
+.form-group textarea { resize: vertical; min-height: 76px; }
+
+/* ── Spinner ── */
+.spinner {
+  display: inline-block; width: 18px; height: 18px;
+  border: 2px solid rgba(10,10,10,.3);
+  border-top-color: #0a0a0a;
+  border-radius: 50%;
+  animation: spin .55s linear infinite;
+  vertical-align: middle; margin-right: 6px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Responsive ── */
+@media (max-width: 600px) {
+  .section { padding: 80px 18px; }
+  .section-h2 { letter-spacing: -1.5px; }
+}
