@@ -130,7 +130,7 @@ export default function Pricing() {
                 {/* Two action buttons */}
                 <div style={{ display:'flex', gap:8, flexDirection:'column' }}>
                   <button
-                    onClick={() => openModal('stripe', { plan: p.plan, amount: monthly ? p.monthly : p.onetime, billing: monthly ? 'monthly' : 'once' })}
+                    onClick={() => openModal('razorpay', { plan: p.plan, amount: monthly ? p.monthly : p.onetime, billing: monthly ? 'monthly' : 'once' })}
                     style={{
                       width:'100%', padding:'12px', borderRadius:50, border:'none', cursor:'pointer',
                       background: p.popular ? 'var(--accent)' : 'rgba(0,229,255,.12)',

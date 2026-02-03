@@ -11,7 +11,7 @@ cd getcalls
 npm install
 ```
 
-This downloads everything (React, Vite, Framer Motion, Stripe, EmailJS). Takes ~30 seconds.
+This downloads everything (React, Vite, Framer Motion, EmailJS). Takes ~30 seconds.
 
 ---
 
@@ -28,6 +28,7 @@ Go to **[emailjs.com](https://www.emailjs.com)** → Sign up free.
 
 ### c) Create Template 1 — Owner Notification (the email YOU receive)
 - Click **Email Templates** → **Create New Template**
+- **CRITICAL:** At the very top, there's a field labeled **To** — set it to: `{{to_email}}`
 - Subject: `🔔 New Lead — {{plan}} — {{from_name}}`
 - Body:
 ```
@@ -36,7 +37,7 @@ Hi Priyanshu,
 New lead from your website!
 
 Name:     {{from_name}}
-Email:    {{from_email}}
+Email:    {{user_email}}
 Phone:    {{from_phone}}
 Business: {{business_type}}
 Plan:     {{plan}}
@@ -79,13 +80,15 @@ GetCalls
 
 ---
 
-## 3. Set Up Stripe (for Pay Now buttons)
+## 3. Set Up Razorpay (for Pay Now buttons)
 
-- Go to **[stripe.com](https://stripe.com)** → Sign up
-- Go to **Dashboard → Developers → API Keys**
-- Copy your **Publishable Key** (starts with `pk_test_…` for testing, `pk_live_…` for production)
+- Go to **[razorpay.com](https://razorpay.com)** → Sign up
+- Complete KYC (required for live payments in India)
+- Go to **Dashboard → Settings → API Keys**
+- Copy your **Key ID** (starts with `rzp_test_…` for testing, `rzp_live_…` for production)
 
-> 💡 For now use `pk_test_…` so no real money is charged while testing.
+> 💡 For now use `rzp_test_…` so no real money is charged while testing.
+> 💳 Test cards: **4111 1111 1111 1111** (any future date, any CVV)
 
 ---
 
@@ -109,7 +112,7 @@ VITE_EMAILJS_TEMPLATE_ID=template_xxxxxxx          # owner notification
 VITE_EMAILJS_AUTOREPLY_TEMPLATE_ID=template_yyyyy  # auto-reply to customer
 VITE_EMAILJS_PUBLIC_KEY=your_public_key_here
 
-VITE_STRIPE_PUBLISHABLE_KEY=pk_test_xxxxxxx
+VITE_RAZORPAY_KEY_ID=rzp_test_xxxxxxxxxxxxxxxx
 
 VITE_OPENAI_API_KEY=sk-xxxxxxx
 ```
@@ -126,7 +129,7 @@ Open **http://localhost:5173** in your browser. Done! 🎉
 
 Test everything:
 - ✅ Contact form → sends you an email + auto-replies to the user
-- ✅ Pay Now → Stripe card form opens (use test card `4242 4242 4242 4242`, exp `12/25`, CVC `123`)
+- ✅ Pay Now → Razorpay checkout opens (use test card `4111 1111 1111 1111`)
 - ✅ Privacy / Terms → popup opens
 - ✅ Chatbot → bottom-right bubble, type anything
 
@@ -155,7 +158,7 @@ git push -u origin main
 - Click **Redeploy**
 
 ### d) Add Your Domain (optional but recommended)
-- Buy a domain (e.g., `getcalls.dev`) on Namecheap or Google Domains
+- Buy a domain (e.g., `getcalls.in`) on Namecheap or Google Domains
 - In Vercel → **Settings** → **Domains** → add your domain
 - Update your DNS records as shown by Vercel
 - SSL is automatic ✅
@@ -165,6 +168,8 @@ git push -u origin main
 ## 8. Go-Live Checklist ✅
 
 - [ ] All `.env` keys filled in
+- [ ] EmailJS template **To** field set to `{{to_email}}`
+- [ ] Razorpay KYC completed (for live payments)
 - [ ] Deployed on Vercel
 - [ ] Test: submit contact form → check your Gmail
 - [ ] Test: click Pay Now → enter test card → see success
@@ -186,6 +191,23 @@ git push -u origin main
 | Starter Price | ₹2,000 |
 | Pro Price | ₹8,000 |
 | Business Price | ₹10,000 |
+
+---
+
+## 10. Razorpay Production Checklist
+
+When you're ready to accept real payments:
+
+1. **Complete KYC** on Razorpay dashboard (requires Aadhaar, PAN, bank details)
+2. **Switch to live keys:**
+   - Dashboard → Settings → API Keys → Generate Live Key
+   - Update `.env`: `VITE_RAZORPAY_KEY_ID=rzp_live_xxxxxxxxxxxxxxxx`
+   - Redeploy on Vercel with the live key
+3. **Set up webhooks** (optional but recommended):
+   - Dashboard → Settings → Webhooks → Add endpoint
+   - URL: `https://your-domain.com/api/razorpay-webhook`
+   - Events: `payment.authorized`, `payment.failed`
+   - Use this to verify payments on your backend
 
 ---
 

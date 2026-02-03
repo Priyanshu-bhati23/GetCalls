@@ -12,7 +12,7 @@ import Cta            from './components/Cta'
 import Footer         from './components/Footer'
 import ContactModal   from './components/ContactModal'
 import PolicyModal    from './components/PolicyModal'
-import StripeModal    from './components/StripeModal'
+import RazorpayModal  from './components/RazorpayModal'
 import ChatBot        from './components/ChatBot'
 
 export default function App() {
@@ -36,7 +36,7 @@ export default function App() {
         {/* Modals */}
         <ContactModal/>
         <PolicyModal/>
-        <StripeModal/>
+        <RazorpayModal/>
 
         {/* AI Chatbot */}
         <ChatBot/>
