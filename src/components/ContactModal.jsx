@@ -3,13 +3,13 @@ import { Modal, useModal } from './Modal'
 import { useToast } from './Toast'
 import emailjs from 'emailjs-com'
 
-/* ── init once ── */
+/* ── init EmailJS once at module load (v3 requirement) ── */
 const PUBLIC_KEY = import.meta.env.VITE_EMAILJS_PUBLIC_KEY
 if (PUBLIC_KEY) emailjs.init(PUBLIC_KEY)
 
 const phoneRe = /^(\+?\d{1,3}[\s-]?)?(\(?\d{1,4}\)?[\s-]?){1,3}\d{2,4}[\s-]?\d{2,6}$/
 
-/* ── Field (stable identity, outside parent) ── */
+/* ── Field — outside the component so identity is stable ── */
 function Field({ name, label, placeholder, type = 'text', value, error, onChange, children }) {
   return (
     <div className="form-group">
@@ -35,7 +35,6 @@ function openMailtoFallback(form, plan) {
     `Plan:     ${plan || 'Not selected'}\n\n` +
     `Message:  ${form.message}\n`
   )
-  // open in a new tab — browser will hand off to mail client or Gmail
   window.open(`mailto:priyanshubhati2347@gmail.com?subject=${subject}&body=${body}`, '_blank')
 }
 
@@ -77,11 +76,10 @@ export default function ContactModal() {
     return Object.keys(errs).length === 0
   }
 
-  /* ────────────────────────────────────────────────────────────────────
-     sendViaEmailJS — tries the EmailJS SDK.
-     Returns { ok: true } on success, { ok: false, reason } on failure.
-     ──────────────────────────────────────────────────────────────────── */
-  const sendViaEmailJS = async () => {
+  /* ════════════════════════════════════════════════════════════════════
+     sendOwnerNotification — sends lead details to YOU (Priyanshu)
+     ════════════════════════════════════════════════════════════════════ */
+  const sendOwnerNotification = async () => {
     const serviceId  = import.meta.env.VITE_EMAILJS_SERVICE_ID
     const templateId = import.meta.env.VITE_EMAILJS_TEMPLATE_ID
 
@@ -89,63 +87,152 @@ export default function ContactModal() {
       return { ok: false, reason: 'env' }
     }
 
-    /* The "To" field in your EmailJS template is the ONLY thing that
-       controls where the email goes.  No payload key can override it.
-       We send to_email, email, from_email so that whichever one the
-       template To field references will resolve.  If ALL of them are
-       empty in the template To, EmailJS returns 422 "recipients empty".
-       In that case we fall back to mailto.                             */
-    const payload = {
-      // ── every common "To" variable — one of these must match what's in your template ──
-      to_email:       'priyanshubhati2347@gmail.com',
-      email:          'priyanshubhati2347@gmail.com',
-      from_email:     'priyanshubhati2347@gmail.com',
-      reply_to:       'priyanshubhati2347@gmail.com',
+    /* ──────────────────────────────────────────────────────────────────
+       OWNER EMAIL TEMPLATE SETUP (EmailJS Dashboard):
+       
+       To:       priyanshubhati2347@gmail.com    (hardcoded in template)
+       Reply-To: {{reply_to}}                     (customer's email)
+       Subject:  🔔 New Lead — {{plan}} — {{customer_name}}
+       
+       Body:
+       Hi Priyanshu,
 
-      // ── body ──
-      to_name:        'Priyanshu',
-      from_name:      form.name,
-      user_name:      form.name,
-      user_email:     form.email,
+       New lead from your website!
+
+       Name:     {{customer_name}}
+       Email:    {{customer_email}}
+       Phone:    {{customer_phone}}
+       Business: {{business_type}}
+       Plan:     {{plan}}
+
+       Message:
+       {{message}}
+
+       —
+       Reply to this email to contact the customer directly.
+       Sent via GetCalls
+       ────────────────────────────────────────────────────────────────── */
+
+    const ownerPayload = {
+      // ── Customer details (the person who filled the form) ──
+      customer_name:  form.name,
       customer_email: form.email,
-      from_phone:     form.phone,
-      phone:          form.phone,
-      business_type:  form.business_type,
-      message:        form.message,
-      plan:           ctx?.plan || 'Not selected',
+      customer_phone: form.phone,
+      
+      // ── Reply-To header: when you hit reply, it goes to the customer ──
+      reply_to: form.email,
+      
+      // ── Lead details ──
+      business_type: form.business_type,
+      message:       form.message,
+      plan:          ctx?.plan || 'Not selected',
+      
+      // ── These are for template compatibility (in case you use them) ──
+      from_name:  form.name,
+      from_email: form.email,
+      from_phone: form.phone,
     }
 
-    console.log('📬 EmailJS payload →', { serviceId, templateId, payload })
+    console.log('📬 Owner notification payload →', ownerPayload)
 
     try {
-      const res = await emailjs.send(serviceId, templateId, payload)
-      console.log('✅ sent:', res)
+      const res = await emailjs.send(serviceId, templateId, ownerPayload)
+      console.log('✅ Owner email sent:', res)
       return { ok: true }
     } catch (err) {
-      console.error('❌ EmailJS error:', err, 'status:', err?.status, 'text:', err?.text)
+      console.error('❌ Owner email failed:', err, 'status:', err?.status, 'text:', err?.text)
       return { ok: false, reason: err?.text || 'unknown' }
     }
   }
 
-  /* ── auto-reply (best effort, never blocks success) ── */
-  const sendAutoReply = async () => {
+  /* ════════════════════════════════════════════════════════════════════
+     sendCustomerConfirmation — sends "thank you" email to the CUSTOMER
+     ════════════════════════════════════════════════════════════════════ */
+  const sendCustomerConfirmation = async () => {
     const serviceId = import.meta.env.VITE_EMAILJS_SERVICE_ID
     const autoId    = import.meta.env.VITE_EMAILJS_AUTOREPLY_TEMPLATE_ID
-    if (!autoId || !serviceId) return
+    
+    console.log('🔍 Customer email check:', {
+      serviceId: serviceId ? '✓ set' : '✗ missing',
+      autoId: autoId ? '✓ set' : '✗ missing',
+      customerEmail: form.email
+    })
+
+    if (!autoId || !serviceId) {
+      console.warn('⚠️ Auto-reply template not configured in .env — customer will NOT receive confirmation email')
+      console.warn('   Add VITE_EMAILJS_AUTOREPLY_TEMPLATE_ID to your .env file')
+      return
+    }
+
+    /* ──────────────────────────────────────────────────────────────────
+       CUSTOMER CONFIRMATION TEMPLATE SETUP (EmailJS Dashboard):
+       
+       CRITICAL: The "To" field in the template editor must be set to
+       one of these variables (they all point to the same email):
+       
+       To:       {{customer_email}}    ← RECOMMENDED
+       OR        {{to_email}}
+       OR        {{email}}
+       
+       Reply-To: priyanshubhati.dev@gmail.com
+       Subject:  Thanks for reaching out — GetCalls ✨
+       
+       Body:
+       Hi {{customer_name}},
+
+       Thank you for trusting us! 🎉
+
+       We received your request and our team will personally call you 
+       within 24 hours to discuss your website.
+
+       In the meantime, if you have any questions, feel free to reply 
+       to this email or call us:
+       📞 +91 9057278418
+       📧 priyanshubhati.dev@gmail.com
+
+       Looking forward to building something amazing together!
+
+       Warm regards,
+       Priyanshu Bhati
+       GetCalls
+       ────────────────────────────────────────────────────────────────── */
+
+    const customerPayload = {
+      // ── ALL possible "To" variable names (covers any template setup) ──
+      customer_email: form.email,
+      to_email:       form.email,
+      email:          form.email,
+      user_email:     form.email,
+      from_email:     form.email,
+      
+      // ── Personalization (all possible name variables) ──
+      customer_name: form.name,
+      user_name:     form.name,
+      name:          form.name,
+      from_name:     form.name,
+      
+      // ── Reply-To: when customer hits reply, it goes to YOUR email ──
+      reply_to: 'priyanshubhati.dev@gmail.com',
+    }
+
+    console.log('📬 Customer confirmation payload →', customerPayload)
 
     try {
-      await emailjs.send(serviceId, autoId, {
-        to_email:   form.email,
-        email:      form.email,
-        from_email: form.email,
-        reply_to:   form.email,
-        user_name:  form.name,
-        from_name:  form.name,
-        name:       form.name,
-      })
-      console.log('✅ auto-reply sent')
-    } catch (e) {
-      console.warn('⚠️ auto-reply failed (non-blocking):', e?.text || e)
+      const res = await emailjs.send(serviceId, autoId, customerPayload)
+      console.log('✅ Customer confirmation sent successfully:', res)
+      console.log(`   Email sent to: ${form.email}`)
+    } catch (err) {
+      // Log the full error so we can debug
+      console.error('❌ Customer confirmation FAILED:', err)
+      console.error('   Status:', err?.status)
+      console.error('   Text:', err?.text)
+      console.error('   Message:', err?.message)
+      
+      if (err?.text?.includes('recipients')) {
+        console.error('   ⚠️  FIX: Go to EmailJS → your auto-reply template → set To field to: {{customer_email}}')
+      }
+      
+      // Still non-blocking — owner email already sent
     }
   }
 
@@ -155,24 +242,22 @@ export default function ContactModal() {
     if (!validate()) return
     setLoading(true)
 
-    // 1) try EmailJS
-    const result = await sendViaEmailJS()
+    // 1) Send notification to owner (YOU)
+    const result = await sendOwnerNotification()
 
     if (!result.ok) {
       console.warn('⚠️ EmailJS failed, falling back to mailto:', result.reason)
-
-      // 2) fallback: open mailto in new tab — this ALWAYS works
+      
+      // Fallback: open mailto window
       openMailtoFallback(form, ctx?.plan)
-
-      // still show success to the user — the mailto window opened
       toast('📧 Email window opened! Send it to complete your request.', 'info', 4500)
       setSuccess(true)
       setLoading(false)
       return
     }
 
-    // 3) EmailJS worked — fire auto-reply in background
-    sendAutoReply()
+    // 2) Send confirmation to customer (fire and forget, but log everything)
+    sendCustomerConfirmation()
 
     setSuccess(true)
     toast('🎉 Request sent! We\'ll call you within 24 hours.', 'success', 4000)
